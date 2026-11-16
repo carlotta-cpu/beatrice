@@ -28,7 +28,6 @@ canvas {
 </head>
 
 <body>
-
 <canvas id="screen"></canvas>
 
 <script>
@@ -36,7 +35,6 @@ const canvas = document.getElementById("screen");
 const ctx = canvas.getContext("2d");
 
 let dpr = 1;
-
 let fase = "rating";
 let voto = 0;
 let frame = 0;
@@ -44,13 +42,12 @@ let tempoInizio = performance.now();
 let ultimoFrame = 0;
 
 const ROSSO_CHIARO = [255, 35, 55];
-const ROSSO_SCuro = [65, 0, 8];
 const BIANCO = [255, 225, 225];
 
 
-/* ==================================================
-   CONFIGURAZIONE SCHERMO
-================================================== */
+/* ================================================
+   SCHERMO
+================================================ */
 
 function scalaSchermo() {
     const s = Math.min(
@@ -71,10 +68,8 @@ function scalaSchermo() {
 
 function impostaCoordinate() {
     ctx.setTransform(
-        dpr, 0,
-        0, -dpr,
-        475 * dpr,
-        375 * dpr
+        dpr, 0, 0, -dpr,
+        475 * dpr, 375 * dpr
     );
 }
 
@@ -82,38 +77,35 @@ window.addEventListener("resize", scalaSchermo);
 scalaSchermo();
 
 
-/* ==================================================
+/* ================================================
    COLORI
-================================================== */
+================================================ */
 
 function colore(rgb, intensita) {
     intensita = Math.max(0, Math.min(1, intensita));
-
     return rgb.map(c => Math.floor(c * intensita));
 }
 
 function css(rgb) {
-    return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+    return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
 }
 
 
-/* ==================================================
-   PULIZIA SCHERMO
-================================================== */
+/* ================================================
+   PULIZIA
+================================================ */
 
 function pulisci() {
     ctx.save();
-
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, 950, 750);
-
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
 }
 
 
-/* ==================================================
+/* ================================================
    TESTI
-================================================== */
+================================================ */
 
 function testo(x, y, frase, dimensione, color,
                font = "Arial", stile = "bold") {
@@ -121,17 +113,14 @@ function testo(x, y, frase, dimensione, color,
     if (!frase) return;
 
     ctx.save();
-
     ctx.scale(1, -1);
 
     ctx.fillStyle = css(color);
     ctx.font = `${stile} ${dimensione}px "${font}", sans-serif`;
-
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
 
     ctx.fillText(frase, x, -y);
-
     ctx.restore();
 }
 
@@ -141,60 +130,48 @@ function testo_graduale(x, y, frase, dimensione,
 
     progressione = Math.max(0, Math.min(1, progressione));
 
-    if (progressione >= 1) {
-        testo(x, y, frase, dimensione, color, font, stile);
-    } else {
-        const lettere = Math.floor(frase.length * progressione);
+    const lettere = progressione >= 1
+        ? frase.length
+        : Math.floor(frase.length * progressione);
 
-        testo(
-            x, y,
-            frase.slice(0, lettere),
-            dimensione,
-            color,
-            font,
-            stile
-        );
-    }
+    testo(
+        x, y,
+        frase.slice(0, lettere),
+        dimensione,
+        color,
+        font,
+        stile
+    );
 }
 
 
-/* ==================================================
+/* ================================================
    PULSANTI
-================================================== */
+================================================ */
 
 function pulsante(x, y, frase, intensita) {
-
-    const c = colore([180, 0, 25], intensita);
-
     ctx.save();
 
-    ctx.fillStyle = "rgb(35, 0, 8)";
-    ctx.strokeStyle = css(c);
+    ctx.fillStyle = "rgb(35,0,8)";
+    ctx.strokeStyle = css(colore([180,0,25], intensita));
     ctx.lineWidth = 1;
 
     ctx.beginPath();
     ctx.rect(x - 65, y - 23, 130, 46);
-
     ctx.fill();
     ctx.stroke();
 
     ctx.restore();
 
-    testo(
-        x, y - 7,
-        frase,
-        15,
-        colore(BIANCO, intensita)
-    );
+    testo(x, y - 7, frase, 15, colore(BIANCO, intensita));
 }
 
 
-/* ==================================================
+/* ================================================
    VALUTAZIONE A STELLE
-================================================== */
+================================================ */
 
 function schermata_rating(intensita) {
-
     pulisci();
 
     testo_graduale(
@@ -206,41 +183,27 @@ function schermata_rating(intensita) {
     );
 
     for (let i = 0; i < 5; i++) {
-
         const x = -120 + i * 60;
 
-        if (voto >= i + 1) {
-            testo(
-                x, -15,
-                "★",
-                45,
-                colore([255, 190, 30], intensita)
-            );
-        } else {
-            testo(
-                x, -15,
-                "☆",
-                45,
-                colore([170, 130, 50], intensita)
-            );
-        }
+        testo(
+            x, -15,
+            voto >= i + 1 ? "★" : "☆",
+            45,
+            voto >= i + 1
+                ? colore([255,190,30], intensita)
+                : colore([170,130,50], intensita)
+        );
     }
 
-    testo(
-        0, -100,
-        "Scegli le stelline...",
-        14,
-        [170, 170, 170]
-    );
+    testo(0, -100, "Scegli le stelline...", 14, [170,170,170]);
 }
 
 
-/* ==================================================
+/* ================================================
    DOMANDE
-================================================== */
+================================================ */
 
 function schermata_domanda(frase, trascorso) {
-
     pulisci();
 
     const comparsa = Math.min(1, trascorso / 1.5);
@@ -269,12 +232,11 @@ function schermata_domanda(frase, trascorso) {
 }
 
 
-/* ==================================================
+/* ================================================
    ECCOLA QUA
-================================================== */
+================================================ */
 
 function schermata_attesa(trascorso) {
-
     pulisci();
 
     let intensita;
@@ -297,24 +259,14 @@ function schermata_attesa(trascorso) {
 }
 
 
-/* ==================================================
-   FORMA DEL DITO MEDIO
-================================================== */
+/* ================================================
+   SAGOMA DELLA MANO
+================================================ */
 
-// Aggiunge una linea alla sagoma.
-
-function linea(punti, x, y) {
-    punti.push([x, y]);
-}
-
-// Aggiunge una curva Bezier alla sagoma.
-
-function curva(punti, x1, y1, x2, y2, x3, y3, passi = 10) {
-
+function aggiungiCurva(punti, x1, y1, x2, y2, x3, y3, passi = 12) {
     const [x0, y0] = punti[punti.length - 1];
 
     for (let i = 1; i <= passi; i++) {
-
         const t = i / passi;
         const mt = 1 - t;
 
@@ -334,69 +286,45 @@ function curva(punti, x1, y1, x2, y2, x3, y3, passi = 10) {
     }
 }
 
+function punti_mano(scala, angolo = 0) {
+    const p = [
+        [-7, -15],
+        [-7, -6]
+    ];
 
-// Sagoma della mano con il dito medio alzato.
+    // Pollice
+    aggiungiCurva(p, -7,-3, -10,-2, -11,0);
+    aggiungiCurva(p, -13,2, -12,5, -10,6);
+    aggiungiCurva(p, -8,7, -6,4, -4,3);
 
-function punti_dito(scala, angolo = 0) {
+    // Dito medio alzato
+    p.push([-4,17]);
+    aggiungiCurva(p, -4,21, 4,21, 4,17);
+    p.push([4,3]);
 
-    const punti = [];
+    // Dita piegate
+    aggiungiCurva(p, 4,6, 6,8, 8,7);
+    aggiungiCurva(p, 10,7, 11,5, 10,3);
+    aggiungiCurva(p, 12,4, 14,2, 14,0);
+    aggiungiCurva(p, 14,-2, 12,-4, 10,-5);
+    aggiungiCurva(p, 8,-7, 7,-8, 7,-10);
 
-    punti.push([-8, -13]);
+    // Lato del pugno e polso
+    p.push([7,-15]);
 
-    linea(punti, -8, -5);
-
-    curva(punti, -8, -3, -11, -1, -11, 2);
-
-    curva(punti, -11, 5, -8, 6, -6, 4);
-
-    linea(punti, -4, 2);
-    linea(punti, -4, 14);
-
-    // Dito medio: la parte più alta.
-
-    curva(punti, -4, 18, 4, 19, 4, 14);
-
-    linea(punti, 4, 3);
-
-    // Dita piegate.
-
-    curva(punti, 5, 7, 9, 7, 10, 4);
-
-    curva(punti, 12, 2, 11, 0, 8, -1);
-
-    linea(punti, 7, -2);
-
-    // Lato destro della mano e pollice.
-
-    curva(punti, 11, 0, 14, -3, 13, -6);
-
-    curva(punti, 12, -10, 9, -10, 8, -8);
-
-    linea(punti, 6, -9);
-
-    curva(punti, 5, -12, 2, -13, 0, -11);
-
-    curva(punti, -2, -13, -5, -14, -8, -13);
-
-    // Scala e rotazione verticale sul proprio asse.
-
-    return punti.map(([x, y]) => [
+    return p.map(([x,y]) => [
         x * scala * Math.cos(angolo),
         y * scala
     ]);
 }
 
 
-/* ==================================================
-   DISEGNO POLIGONO
-================================================== */
+/* ================================================
+   DISEGNO DELLA SAGOMA
+================================================ */
 
-function disegnaPoligono(punti, fill, stroke = fill, lineWidth = 1) {
-
-    if (!punti.length) return;
-
+function disegnaSagoma(punti, riempi = true) {
     ctx.beginPath();
-
     ctx.moveTo(punti[0][0], punti[0][1]);
 
     for (let i = 1; i < punti.length; i++) {
@@ -405,88 +333,102 @@ function disegnaPoligono(punti, fill, stroke = fill, lineWidth = 1) {
 
     ctx.closePath();
 
-    ctx.fillStyle = css(fill);
-    ctx.fill();
-
-    ctx.strokeStyle = css(stroke);
-    ctx.lineWidth = lineWidth;
+    if (riempi) ctx.fill();
     ctx.stroke();
 }
 
 
-/* ==================================================
-   DITO MEDIO CON PROFONDITÀ E SFUMATURE
-================================================== */
+/* ================================================
+   MANO COLOR PELLE
+================================================ */
 
-function disegna_dito_pieno(scala, angolo = 0) {
+function disegna_mano_piena(scala, angolo = 0) {
+    const punti = punti_mano(scala, angolo);
 
-    // Ombra.
+    ctx.save();
 
-    const ombra = punti_dito(scala * 1.06, angolo);
+    // Ombra morbida
+    ctx.shadowColor = "rgba(70,25,15,0.45)";
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetX = 5;
+    ctx.shadowOffsetY = -6;
 
-    disegnaPoligono(
-        ombra,
-        [30, 0, 5]
-    );
+    const gradiente = ctx.createLinearGradient(-150, 240, 150, -200);
 
+    gradiente.addColorStop(0, "#a85f48");
+    gradiente.addColorStop(0.25, "#d18a6b");
+    gradiente.addColorStop(0.55, "#f0b99a");
+    gradiente.addColorStop(0.8, "#e5a183");
+    gradiente.addColorStop(1, "#b97059");
 
-    // Sfumature rosse.
+    ctx.fillStyle = gradiente;
+    ctx.strokeStyle = "#8d4f3d";
+    ctx.lineWidth = 2.5;
 
-    const colori = [
-        [85, 0, 12],
-        [105, 0, 15],
-        [130, 0, 18],
-        [155, 0, 22],
-        [180, 0, 27],
-        [205, 5, 32],
-        [225, 10, 40],
-        [245, 20, 50],
-        [255, 40, 65],
-        [255, 65, 80]
-    ];
+    disegnaSagoma(punti);
 
-    for (let i = 0; i < colori.length; i++) {
+    ctx.restore();
 
-        const fattore = 1 - i * 0.075;
+    // Dettagli: unghia del dito medio e pieghe delle dita
+    const larghezza = Math.cos(angolo);
 
-        const punti = punti_dito(
-            scala * fattore,
-            angolo
-        );
+    ctx.save();
+    ctx.scale(larghezza, 1);
 
-        disegnaPoligono(
-            punti,
-            colori[i]
-        );
-    }
+    // Unghia del dito medio
+    ctx.beginPath();
+    ctx.ellipse(0, 205, 17, 12, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "#f7c8b5";
+    ctx.fill();
 
+    ctx.strokeStyle = "#c78270";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
 
-    // Riflessi luminosi.
+    // Riflesso sull'unghia
+    ctx.beginPath();
+    ctx.ellipse(-3, 209, 7, 3, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,245,235,0.55)";
+    ctx.fill();
 
-    if (Math.abs(Math.cos(angolo)) > 0.65) {
+    // Pieghe delle dita chiuse
+    ctx.beginPath();
+    ctx.moveTo(55, 55);
+    ctx.quadraticCurveTo(85, 70, 105, 47);
 
-        ctx.beginPath();
-        ctx.arc(-30, 90, 7.5, 0, Math.PI * 2);
+    ctx.moveTo(65, 20);
+    ctx.quadraticCurveTo(95, 35, 112, 12);
 
-        ctx.fillStyle = "rgb(255, 130, 140)";
-        ctx.fill();
+    ctx.strokeStyle = "rgba(130,65,48,0.55)";
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
 
-        ctx.beginPath();
-        ctx.arc(-15, 110, 3.5, 0, Math.PI * 2);
+    // Linea del pollice
+    ctx.beginPath();
+    ctx.moveTo(-105, 20);
+    ctx.quadraticCurveTo(-75, 0, -48, 27);
+    ctx.strokeStyle = "rgba(130,65,48,0.45)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
-        ctx.fillStyle = "rgb(255, 190, 190)";
-        ctx.fill();
-    }
+    // Luce sul dorso della mano
+    ctx.beginPath();
+    ctx.moveTo(-55, -45);
+    ctx.quadraticCurveTo(-15, -65, 40, -45);
+    ctx.strokeStyle = "rgba(255,225,205,0.35)";
+    ctx.lineWidth = 7;
+    ctx.stroke();
+
+    ctx.restore();
 }
 
 
-/* ==================================================
-   DISEGNO PROGRESSIVO DEL DITO
-================================================== */
+/* ================================================
+   DISEGNO PROGRESSIVO DELLA MANO
+================================================ */
 
-function disegna_contorno_dito(progressione) {
-
-    const punti = punti_dito(12);
+function disegna_contorno_mano(progressione) {
+    const punti = punti_mano(12);
 
     const quanti = Math.max(
         2,
@@ -494,7 +436,6 @@ function disegna_contorno_dito(progressione) {
     );
 
     ctx.beginPath();
-
     ctx.moveTo(punti[0][0], punti[0][1]);
 
     for (let i = 1; i < quanti; i++) {
@@ -503,22 +444,20 @@ function disegna_contorno_dito(progressione) {
 
     ctx.strokeStyle = css(ROSSO_CHIARO);
     ctx.lineWidth = 3;
-
     ctx.stroke();
 }
 
 
-/* ==================================================
+/* ================================================
    SCRITTE SULLA MANO
-================================================== */
+================================================ */
 
-function scritte_dito(progressione) {
-
+function scritte_mano(progressione) {
     testo_graduale(
         0, -15,
         "Beatrice",
         43,
-        [255, 220, 220],
+        [255,220,220],
         progressione,
         "Brush Script MT",
         "italic"
@@ -528,23 +467,20 @@ function scritte_dito(progressione) {
         0, -85,
         "foto tette?",
         15,
-        [255, 100, 115],
+        [255,100,115],
         progressione
     );
 }
 
 
-/* ==================================================
+/* ================================================
    LUCI
-================================================== */
+================================================ */
 
 function disegna_luci(intensita) {
-
     for (let i = 0; i < 30; i++) {
-
         const angolo =
-            i * 2 * Math.PI / 30
-            + frame * 0.008;
+            i * 2 * Math.PI / 30 + frame * 0.008;
 
         const x = 245 * Math.cos(angolo);
         const y = 195 * Math.sin(angolo);
@@ -552,35 +488,28 @@ function disegna_luci(intensita) {
         const pulsazione =
             0.5 + 0.5 * Math.sin(frame * 0.1 + i);
 
-        const luminosita = intensita * (
-            0.5 + pulsazione * 0.5
-        );
-
-        const r = (3 + pulsazione * 5) / 2;
+        const luminosita =
+            intensita * (0.5 + pulsazione * 0.5);
 
         ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.arc(x, y, (3 + pulsazione * 5) / 2, 0, Math.PI * 2);
 
-        ctx.fillStyle = css(
-            colore(ROSSO_CHIARO, luminosita)
-        );
-
+        ctx.fillStyle = css(colore(ROSSO_CHIARO, luminosita));
         ctx.fill();
     }
 }
 
 
-/* ==================================================
+/* ================================================
    FIRMA LOTTY
-================================================== */
+================================================ */
 
 function mostra_firma(progressione) {
-
     testo_graduale(
         330, -285,
         "Lotty",
         32,
-        colore([230, 110, 130], progressione),
+        colore([230,110,130], progressione),
         progressione,
         "Brush Script MT",
         "italic"
@@ -588,26 +517,23 @@ function mostra_firma(progressione) {
 }
 
 
-/* ==================================================
+/* ================================================
    CAMBIO FASE
-================================================== */
+================================================ */
 
 function passa_a(nuova_fase) {
-
     fase = nuova_fase;
     tempoInizio = performance.now();
     frame = 0;
-
     pulisci();
 }
 
 
-/* ==================================================
+/* ================================================
    CLICK
-================================================== */
+================================================ */
 
 function click(event) {
-
     const rect = canvas.getBoundingClientRect();
 
     const x =
@@ -616,13 +542,9 @@ function click(event) {
     const y =
         375 - (event.clientY - rect.top) * 750 / rect.height;
 
-
     if (fase === "rating") {
-
         if (x > -160 && x < 160 && y > -70 && y < 50) {
-
             let posizione = Math.round((x + 120) / 60) + 1;
-
             posizione = Math.max(1, Math.min(5, posizione));
 
             voto = posizione;
@@ -636,9 +558,7 @@ function click(event) {
     }
 
     else if (fase === "domanda1" || fase === "domanda2") {
-
         if (y > -175 && y < 30) {
-
             if (fase === "domanda1") {
                 passa_a("domanda2");
             } else {
@@ -648,140 +568,84 @@ function click(event) {
     }
 }
 
-
-// Risposta immediata al click e al tocco.
-
 canvas.addEventListener("pointerdown", event => {
     event.preventDefault();
     click(event);
 });
 
 
-/* ==================================================
+/* ================================================
    ANIMAZIONE PRINCIPALE
-================================================== */
+================================================ */
 
 function animazione(ora) {
-
     requestAnimationFrame(animazione);
 
-    if (ora - ultimoFrame < 35) {
-        return;
-    }
-
+    if (ora - ultimoFrame < 35) return;
     ultimoFrame = ora;
 
-    const trascorso =
-        (performance.now() - tempoInizio) / 1000;
-
+    const trascorso = (performance.now() - tempoInizio) / 1000;
     frame++;
 
-
-    // RATING
-
     if (fase === "rating") {
-
-        const intensita = Math.min(1, trascorso / 1.5);
-
-        schermata_rating(intensita);
+        schermata_rating(Math.min(1, trascorso / 1.5));
     }
-
-
-    // PRIMA DOMANDA
 
     else if (fase === "domanda1") {
-
         schermata_domanda(
-            "Sei pronto a vedere la sorpresa?",
+            "Sei pronta a vedere la sorpresa?",
             trascorso
         );
 
-        if (trascorso >= 8) {
-            passa_a("domanda2");
-        }
+        if (trascorso >= 8) passa_a("domanda2");
     }
-
-
-    // SECONDA DOMANDA
 
     else if (fase === "domanda2") {
-
         schermata_domanda(
-            "Sicuro sicuro?",
+            "Sicura sicura?",
             trascorso
         );
 
-        if (trascorso >= 8) {
-            passa_a("attesa");
-        }
+        if (trascorso >= 8) passa_a("attesa");
     }
-
-
-    // ECCOLA QUA
 
     else if (fase === "attesa") {
-
         schermata_attesa(trascorso);
 
-        if (trascorso >= 5) {
-            passa_a("dito");
-        }
+        if (trascorso >= 5) passa_a("mano");
     }
 
-
-    // DITO MEDIO
-
-    else if (fase === "dito") {
-
+    else if (fase === "mano") {
         pulisci();
 
         if (trascorso < 3) {
-
-            const progressione = trascorso / 3;
-
-            disegna_contorno_dito(progressione);
+            disegna_contorno_mano(trascorso / 3);
         }
 
         else if (trascorso < 4.5) {
-
-            disegna_dito_pieno(12);
+            disegna_mano_piena(12);
         }
 
         else if (trascorso < 6.5) {
-
-            disegna_dito_pieno(12);
-
-            const progressione = (trascorso - 4.5) / 2;
-
-            scritte_dito(progressione);
+            disegna_mano_piena(12);
+            scritte_mano((trascorso - 4.5) / 2);
         }
 
         else {
-
-            // Pulsazione.
-
             const pulsazione =
                 1 + 0.035 * Math.sin(frame * 0.08);
 
-
-            // Rotazione verticale sul proprio asse.
-
             const rotazione = frame * 0.025;
 
-            disegna_dito_pieno(
+            disegna_mano_piena(
                 12 * pulsazione,
                 rotazione
             );
 
-            scritte_dito(1);
-
+            scritte_mano(1);
             disegna_luci(1);
 
-
-            // Firma Lotty.
-
             if (trascorso > 9) {
-
                 const progressione = Math.min(
                     1,
                     (trascorso - 9) / 2
@@ -794,13 +658,12 @@ function animazione(ora) {
 }
 
 
-/* ==================================================
+/* ================================================
    AVVIO
-================================================== */
+================================================ */
 
 requestAnimationFrame(animazione);
 
 </script>
-
 </body>
 </html>
