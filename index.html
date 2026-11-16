@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -45,6 +44,8 @@ let ultimoFrame = 0;
 let messaggioRating = "";
 let ratingVaiAvanti = false;
 let tempoRating = 0;
+
+let messaggioDomanda = "";
 
 const ROSSO_CHIARO = [255, 35, 55];
 const BIANCO = [255, 225, 225];
@@ -243,6 +244,15 @@ function schermata_domanda(frase, trascorso) {
 
     pulsante(-100, -30, "SÌ", intensita);
     pulsante(100, -30, "NO", intensita);
+
+    if (messaggioDomanda !== "") {
+        testo(
+            0, -130,
+            messaggioDomanda,
+            17,
+            colore(ROSSO_CHIARO, intensita)
+        );
+    }
 }
 
 
@@ -539,6 +549,7 @@ function passa_a(nuova_fase) {
     fase = nuova_fase;
     tempoInizio = performance.now();
     frame = 0;
+    messaggioDomanda = "";
     pulisci();
 }
 
@@ -583,11 +594,28 @@ function click(event) {
     }
 
     else if (fase === "domanda1" || fase === "domanda2") {
-        if (y > -175 && y < 30) {
+
+        // Controllo SÌ
+        if (
+            x >= -165 && x <= -35 &&
+            y >= -53 && y <= -7
+        ) {
             if (fase === "domanda1") {
                 passa_a("domanda2");
             } else {
                 passa_a("attesa");
+            }
+        }
+
+        // Controllo NO
+        else if (
+            x >= 35 && x <= 165 &&
+            y >= -53 && y <= -7
+        ) {
+            if (fase === "domanda1") {
+                messaggioDomanda = "Eh no, non puoi tirarti indietro!";
+            } else {
+                messaggioDomanda = "Lo sapevo che avresti detto no... riprova!";
             }
         }
     }
@@ -699,4 +727,3 @@ requestAnimationFrame(animazione);
 </script>
 </body>
 </html>
-```
