@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -40,6 +41,10 @@ let voto = 0;
 let frame = 0;
 let tempoInizio = performance.now();
 let ultimoFrame = 0;
+
+let messaggioRating = "";
+let ratingVaiAvanti = false;
+let tempoRating = 0;
 
 const ROSSO_CHIARO = [255, 35, 55];
 const BIANCO = [255, 225, 225];
@@ -196,6 +201,15 @@ function schermata_rating(intensita) {
     }
 
     testo(0, -100, "Scegli le stelline...", 14, [170,170,170]);
+
+    if (messaggioRating !== "") {
+        testo(
+            0, -160,
+            messaggioRating,
+            17,
+            colore(ROSSO_CHIARO, intensita)
+        );
+    }
 }
 
 
@@ -543,16 +557,27 @@ function click(event) {
         375 - (event.clientY - rect.top) * 750 / rect.height;
 
     if (fase === "rating") {
-        if (x > -160 && x < 160 && y > -70 && y < 50) {
-            let posizione = Math.round((x + 120) / 60) + 1;
-            posizione = Math.max(1, Math.min(5, posizione));
+        if (x >= -150 && x <= 150 && y > -70 && y < 50) {
 
-            voto = posizione;
+            const posizione = Math.floor((x + 150) / 60) + 1;
+
+            voto = Math.max(1, Math.min(5, posizione));
+
+            const messaggi = {
+                1: "SOLO UNA?! Ma come ti permetti?!",
+                2: "Due stelline? Mi aspettavo di più!",
+                3: "Tre? Va beh, possiamo migliorare...",
+                4: "Quasi! Ma manca ancora una stellina!",
+                5: "Ecco! Questa è la risposta giusta!"
+            };
+
+            messaggioRating = messaggi[voto];
 
             if (voto === 5) {
-                passa_a("domanda1");
+                ratingVaiAvanti = true;
+                tempoRating = performance.now();
             } else {
-                voto = 0;
+                ratingVaiAvanti = false;
             }
         }
     }
@@ -589,6 +614,13 @@ function animazione(ora) {
 
     if (fase === "rating") {
         schermata_rating(Math.min(1, trascorso / 1.5));
+
+        if (
+            ratingVaiAvanti &&
+            performance.now() - tempoRating >= 1000
+        ) {
+            passa_a("domanda1");
+        }
     }
 
     else if (fase === "domanda1") {
@@ -667,3 +699,4 @@ requestAnimationFrame(animazione);
 </script>
 </body>
 </html>
+```
