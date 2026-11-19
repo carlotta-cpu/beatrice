@@ -1,62 +1,58 @@
-<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rose bouquet in ASCII</title>
+<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Heart in ASCII</title>
 <style>html,body{margin:0;height:100%;background:#000;overflow:hidden}canvas{display:block;width:100%;height:100%;object-fit:contain}</style></head><body><canvas id="c"></canvas>
 <script>
-// Rose bouquet in ASCII - porting JavaScript. Spazio / tocco = pausa, R = riparti
-const COLS=113,ROWS=105,CW=7,CH=10,W=COLS*CW,H=ROWS*CH,N=COLS*ROWS,TAU=Math.PI*2,PI=Math.PI;
+window.onerror=(m,s,l)=>{document.body.insertAdjacentHTML('beforeend','<pre style="position:fixed;top:0;left:0;color:#fff;background:#900;padding:8px;margin:0;font-size:14px;white-space:pre-wrap">ERRORE: '+m+' (riga '+l+')</pre>')};
+// The Heart in ASCII - porting JavaScript. Spazio / tocco = pausa, R = riparti
+const COLS=88,ROWS=74,CW=9,CH=14,W=COLS*CW,H=ROWS*CH,N=COLS*ROWS,TAU=Math.PI*2;
 const cv=document.getElementById('c');cv.width=W;cv.height=H;const cx=cv.getContext('2d');
 const gl=document.createElement('canvas');gl.width=W>>2;gl.height=H>>2;const gx=gl.getContext('2d');
-const {sin,cos,sqrt,pow,abs,exp,floor,atan2,max,min,hypot}=Math;
+const {sin,cos,sqrt,pow,abs,exp,floor,atan2,max,min,hypot,cbrt}=Math;
 const cl=(x,a=0,b=1)=>x<a?a:x>b?b:x,sm=x=>{x=cl(x);return x*x*(3-2*x)},mod=(a,b)=>((a%b)+b)%b;
-const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
-const unit=v=>{const l=hypot(...v)||1e-9;return[v[0]/l,v[1]/l,v[2]/l]};
+const dig=(a,arr)=>{let i=0;while(i<arr.length&&a>=arr[i])i++;return i};
+const LOOP=20,T_K0=.3,T_K1=11.4,T_LOCK=11.5,PULSE=.9,T_SPARKLE=12.6,T_G0=15.2,T_G1=16.6,AMP=.9,R3=sqrt(3),UNIT=160,MID_Y=.36;
+const HEART=[1,.13,.24],LINE=[1,.3,.38],EDGE=[1,.6,.66],PINK=[1,.45,.62],WHITE=[1,.97,.94];
+const STAR_C=[[1,1,1],[1,.59,.75],[.67,.8,1],[1,.84,.59]];
+const POOLS=["1il!;:","rtfjcvxz=+","aeoun0{}[]<>","08B$#&%Q"],SLOPE="-/|\\-";
+const c0=COLS>>1,r0=Math.round(ROWS*37/74),ox=(c0+.5)*CW,oy=(r0+.5)*CH;
 function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-const LOOP=20,T_G0=.5,T_G1=3,T_B0=2.5,T_B1=3.6,T_P0=2.9,T_P1=4.1,T_RIB=4.25,T_BL0=4.4,T_BL1=5.1,GROWN=5.1,T_OPEN=5,STAG=.38,OPEN=2.6,T_GL0=14.6,T_GL1=15.8,T_FALL=15.2,T_MSG=13,FLASH=.6;
-const MSG="F O R   Y O U   <3";
-const POOLS=["1il!;:","rtfjcvxz=+","aeoun0{}[]<>","08B$#&%Q"];
-const STEM=0,LEAF=1,SEPAL=2,PETAL=3,EDGE=4,GLINT=5,PAPER=6,PAPER_IN=7,RIBBON=8,DUST=9,GOLD=10,FOLIAGE=11,BLOSSOM=12;
-const COLORS=[[70,200,96],[52,196,84],[80,206,100],[255,34,64],[255,120,146],[255,255,255],[212,220,236],[128,136,156],[255,190,80],[220,228,245],[255,214,150],[34,130,62],[255,244,248],[255,150,190],[170,205,255]].map(c=>c.map(v=>v/255));
-const WHITE=[1,1,1];
-const SHADES=[[[255,22,52],[255,90,112]],[[255,70,140],[255,150,190]],[[255,34,64],[255,110,130]],[[255,120,176],[255,186,214]],[[255,50,76],[255,126,144]]].map(s=>s.map(c=>c.map(v=>v/255)));
-const ROSE_COL=[0,1,2,1,2,1,2,3,4,0,3,4,0,3,4,0,3,4,0].map(i=>SHADES[i]),NR=19;
-// matrici 3x3 (righe)
-const mulM=(A,B)=>{const o=[];for(let i=0;i<3;i++)for(let j=0;j<3;j++)o.push(A[i*3]*B[j]+A[i*3+1]*B[3+j]+A[i*3+2]*B[6+j]);return o};
-const apM=(M,v)=>[M[0]*v[0]+M[1]*v[1]+M[2]*v[2],M[3]*v[0]+M[4]*v[1]+M[5]*v[2],M[6]*v[0]+M[7]*v[1]+M[8]*v[2]];
-const spinY=a=>{const c=cos(a),s=sin(a);return[c,0,s,0,1,0,-s,0,c]};
-function turnTo(d){d=unit(d);const v=cross([0,1,0],d),c=d[1];if(hypot(...v)<1e-9)return[1,0,0,0,1,0,0,0,1];
- const k=[0,-v[2],v[1],v[2],0,-v[0],-v[1],v[0],0],kk=mulM(k,k),I=[1,0,0,0,1,0,0,0,1];return I.map((x,i)=>x+k[i]+kk[i]/(1+c))}
-// disposizione delle rose: una in cima, sei attorno, dodici fuori
-const DOME=[0,-.38,0],DR=.64,WAIST=[0,-.62,0],BOTTOM=-1.10,RT=.47;
-const onDome=(tl,a)=>[sin(tl)*sin(a),cos(tl),sin(tl)*cos(a)];
-const DIRS=[onDome(0,0)];for(let k=0;k<6;k++)DIRS.push(onDome(RT,TAU*k/6+TAU/12));for(let k=0;k<12;k++)DIRS.push(onDome(2*RT,TAU*k/12));
-const POS=DIRS.map(d=>[DOME[0]+DR*d[0],DOME[1]+DR*d[1],DOME[2]+DR*d[2]]);
-const R5=rng(5),TURN=DIRS.map(d=>mulM(turnTo(d),spinY(R5()*TAU)));
-const ORDER=[0,1,4,2,5,3,6];for(let j=0;j<12;j++)ORDER.push(7+(5*j)%12);
-const START=new Array(NR);ORDER.forEach((k,i)=>START[k]=T_OPEN+STAG*i);
-const STEM_TOP=max(...POS.map(p=>p[1])),ROSE_SIZE=.30;
-const growT=y=>T_G0+(T_G1-T_G0)*cl((y-BOTTOM)/(STEM_TOP-BOTTOM));
-const R23=rng(23),BUD=POS.map(p=>T_B0+(T_B1-T_B0-.35)*(p[1]+.01)/(STEM_TOP+.01)+.35*R23());
-const opening=(t,k)=>{const e=sm((t-START[k])/OPEN);return e*(1.35-.35*e)};
-// la rosa: spirale tagliata a petali
-const SPI=120,ACR=6,ROSEPTS=SPI*ACR;
-const AMIN=2.2*PI,AMAX=20*PI,PID0=floor(3.6*AMIN/TAU),PETCACHE={};
-const PETID=new Int16Array(ROSEPTS),OUTER=new Float32Array(ROSEPTS),RIM=new Uint8Array(ROSEPTS),HEARTG=new Float32Array(ROSEPTS);
-for(let i=0;i<SPI;i++)for(let j=0;j<ACR;j++){const A=AMIN+(AMAX-AMIN)*i/(SPI-1),q=i*ACR+j;PETID[q]=floor(3.6*A/TAU)-PID0;OUTER[q]=1-i/(SPI-1);RIM[q]=j/(ACR-1)>.92?1:0;HEARTG[q]=.66+.34*pow(OUTER[q],.8)}
-function petals(open){const key=Math.round(open*50)/50;if(PETCACHE[key])return PETCACHE[key];
- const p=new Float32Array(ROSEPTS*3),n=new Float32Array(ROSEPTS*3),spread=1.4+4.2*key,wrap=sm(key/.7);
- for(let i=0;i<SPI;i++){const A=AMIN+(AMAX-AMIN)*i/(SPI-1),lean=(PI/2)*exp(-A/(spread*PI)),wd=1-.5*pow(1.25*pow(1-mod(3.6*A,TAU)/PI,2)-.25,2);
-  for(let j=0;j<ACR;j++){const s=j/(ACR-1),cup=1.95653*s*s*pow(1.27689*s-1,2)*sin(lean),r=wd*(s*sin(lean)+cup*cos(lean)),y=wd*(s*cos(lean)-cup*sin(lean)),q=(i*ACR+j)*3;
-   p[q]=r*sin(A)*.8*(.72+.28*wrap);p[q+1]=y*.8*(.66+.34*wrap);p[q+2]=r*cos(A)*.8*(.72+.28*wrap);
-   const l=hypot(sin(A),.3,cos(A));n[q]=sin(A)/l;n[q+1]=.3/l;n[q+2]=cos(A)/l}}
- return PETCACHE[key]={p,n}}
-const R31=rng(31),DEW=Array.from({length:14},()=>{let q;do{q=floor(R31()*ROSEPTS)}while(OUTER[q]<.6||(q%ACR)/(ACR-1)<.6);return q}),DEWOFF=DEW.map(()=>R31()*10),DEWEV=DEW.map(()=>2+2*R31());
-// parti statiche del bouquet
-const S={p:[],n:[],tag:[],part:[],app:[],gain:[],pop:[],cen:[],rim:[]};
-function addS(x,y,z,nx,ny,nz,tag,part,app,gain,pop,c,rim){S.p.push(x,y,z);S.n.push(nx,ny,nz);S.tag.push(tag);S.part.push(part);S.app.push(app);S.gain.push(gain||1);S.pop.push(pop?1:0);S.cen.push(...(c||[0,0,0]));S.rim.push(rim?1:0)}
-for(let k=0;k<9;k++){const sp=k?[.026*sin(1.7*k),0,.026*cos(1.7*k)]:[0,0,0];const top=[WAIST[0]+sp[0],WAIST[1]+sp[1]+.1,WAIST[2]+sp[2]],end=[WAIST[0]+sp[0]*2.4,BOTTOM,WAIST[2]+sp[2]*2.4];
- for(let i=0;i<24;i++){const u=i/23,y=top[1]+(end[1]-top[1])*u;addS(top[0]+(end[0]-top[0])*u,y,top[2]+(end[2]-top[2])*u,0,0,1,STEM,1,growT(y))}}
-for(let k=0;k<NR;k++){const b=[POS[k][0]-DIRS[k][0]*.02,POS[k][1]-DIRS[k][1]*.02,POS[k][2]-DIRS[k][2]*.02],st=[WAIST[0]+.026*sin(1.7*k),WAIST[1]+.1,WAIST[2]+.026*cos(1.7*k)],bd=[.35*b[0],.5*(st[1]+b[1]),.35*b[2]];
- for(let i=0;i<22;i++){const u=i/21,f=[0,1,2].map(a=>(1-u)*(1-u)*st[a]+2*(1-u)*u*bd[a]+u*u*b[a]);addS(f[0],f[1],f[2],0,0,1,STEM,1,growT(f[1]))}}
-{const st=growT(0);for(let i=0;i<14;i++)for(let j=0;j<60;j++){const tl=1.25*i/13,a=TAU*j/60,r=.6+.012*sin(7*a+14*tl),d=[sin(tl)*sin(a),cos(tl),sin(tl)*cos(a)];
- addS(DOME[0]+r*d[0],DOME[1]+r*d[1],DOME[2]+r*d[2],d[0],d[1],d[2],FOLIAGE,50,st+(T_G1-st)*tl/1.25,.55)}}
-for(let j=1;j<=6;j++){const a=TAU*j/8+TAU/16,b=[.6*sin(a),-.17,.6*cos(a)],d=unit([sin(a),.05,cos(a)]),L=.30+.03*sin(5*a),wide=unit(cross(d,[0,1,0])),up=cross(wide,d);
- for(let i=0;i<12;i++)for(let
+const R=rng(14);
+const kAt=t=>{const u=cl((t-T_K0)/(T_K1-T_K0));return .15+99.85*u*u*u*(u*(6*u-15)+10)};
+const envelope=x=>{const b=cbrt(x*x),a=AMP*sqrt(max(3-x*x,0));return[b-a,b+a]};
+const GX=new Float32Array(N),GY=new Float32Array(N),HASH=new Int32Array(N),RND=new Float32Array(N),LIGHT=new Float32Array(N);
+for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const i=r*COLS+c,X=((c+.5)*CW-ox)/UNIT,Y=(oy-(r+.5)*CH)/UNIT;GX[i]=X;GY[i]=Y;HASH[i]=floor(R()*9973);RND[i]=R();
+ LIGHT[i]=.32*cl((Y+1.6)/3.8)+.38*(exp(-(pow(X+.72,2)+pow(Y-1.62,2))/.30)+.6*exp(-(pow(X-.78,2)+pow(Y-1.66,2))/.40))}
+const CH_=new Int16Array(N),COL=new Float32Array(N*3);
+function put(r,c,ch,rgb,k=1){r=floor(r);c=floor(c);if(r<0||r>=ROWS||c<0||c>=COLS)return;const i=r*COLS+c;CH_[i]=ch.charCodeAt(0);COL[i*3]=rgb[0]*k;COL[i*3+1]=rgb[1]*k;COL[i*3+2]=rgb[2]*k}
+function cellRays(cy,cxx,reach,rgb,s){for(let d=1;d<=reach;d++){const f=(1-d/(reach+1))*s;let arms=[[0,1,'-'],[0,-1,'-'],[1,0,'|'],[-1,0,'|']];if(d<=reach>>1)arms=arms.concat([[1,1,'\\'],[-1,-1,'\\'],[1,-1,'/'],[-1,1,'/']]);
+ for(const[dy,dx,ch]of arms){const yy=cy+dy*d,xx=cxx+dx*d*(dy==0?2:1),k=f*(dx&&dy?.7:1);if(yy>=0&&yy<ROWS&&xx>=0&&xx<COLS){const i=yy*COLS+xx;if(max(COL[i*3],COL[i*3+1],COL[i*3+2])<k)put(yy,xx,ch,rgb,k)}}}
+ put(cy,cxx,'*',rgb,1.3*s)}
+const AX=new Int16Array(N),AL=new Float32Array(N);
+{const row=r0*COLS;for(let c=2;c<COLS-2;c++){AX[row+c]=45;AL[row+c]=.36}AX[row+COLS-3]=62;
+ const top=floor((oy-2.62*UNIT)/CH),bot=floor((oy+1.82*UNIT)/CH);for(let r=top;r<=bot;r++){AX[r*COLS+c0]=124;AL[r*COLS+c0]=.36}AX[top*COLS+c0]=94;
+ const lab=(r,c,s)=>{for(let j=0;j<s.length;j++){AX[r*COLS+c+j]=s.charCodeAt(j);AL[r*COLS+c+j]=.5}};
+ for(const i of[-2,-1,1,2]){const c=floor((ox+i*UNIT)/CW);AX[row+c]=43;AL[row+c]=.36;const s=''+i;lab(r0+1,c-s.length+1,s)}
+ for(const i of[-1,1,2]){const r=floor((oy-i*UNIT)/CH);AX[r*COLS+c0]=43;AL[r*COLS+c0]=.36;const s=''+i;lab(r,c0-1-s.length,s)}
+ AX[row+c0]=43}
+const STAR=Array.from({length:220},()=>{const g=[R(),R(),R(),R(),R(),R()];return{g,kind:g[5]<.1?1:g[5]<.17?2:g[5]<.22?3:0}});
+function inHeart(n){const o=[];while(o.length<n){const x=(R()*2-1)*R3,y=-1.6+R()*3.9,[lo,hi]=envelope(x);if(y>lo+.05&&y<hi-.05)o.push([x,y])}return o}
+const SPARKS=inHeart(160).map(([x,y])=>{const ang=atan2(y-MID_Y,x)+(R()-.5)*.8,sp=240+340*R();return{x:ox+x*UNIT,y:oy-y*UNIT,vx:cos(ang)*sp,vy:-sin(ang)*sp,life:1.1+.7*R(),hot:R()}});
+const SPOTS=inHeart(400),BEAT=Array.from({length:16},()=>[1.7+1.6*R(),R()]);
+const box3=a=>{const o=new Float32Array(N);for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){let s=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const rr=r+dy,cc=c+dx;if(rr>=0&&rr<ROWS&&cc>=0&&cc<COLS)s+=a[rr*COLS+cc]}o[r*COLS+c]=s}return o};
+const pulseFront=t=>-R3-.4+(2*R3+.8)*(t-T_LOCK)/PULSE;
+function scene(t){
+ CH_.fill(0);COL.fill(0);
+ let flares=0;
+ for(const{g,kind}of STAR){const x=mod(g[0]*COLS+.6*sin(t*.5+g[4]*TAU),COLS),y=.78*ROWS*mod(g[1]-t*.006*(.5+g[3]),1),bt=2.5+4.5*g[3],pk=cl(1-abs(mod(t/bt+g[2],1)-.5)*bt/.24),s=.15+.2*g[4]+pow(pk,1.5);
+  put(y,x,s>.8?'*':s>.5?'+':'.',STAR_C[kind],cl(.2+.8*s));if(s>.95&&flares<3){flares++;cellRays(floor(y),floor(x),floor(1+3*pow(min(s,1.2),2)/1.2),STAR_C[kind],.5*min(s,1.2))}}
+ for(let i=0;i<N;i++)if(AX[i]){CH_[i]=AX[i];COL[i*3]=COL[i*3+1]=COL[i*3+2]=AL[i]}
+ const k=kAt(t),lock=t-T_LOCK,LEN=new Float32Array(N),VX=new Float32Array(N),VY=new Float32Array(N),LOW=new Float32Array(N),TURN=new Float32Array(N),HEAT=new Float32Array(N);
+ const n=floor(3000+460*k),pf=pulseFront(t),pOn=lock>=0&&lock<PULSE+.4;let px0=0,py0=0,x0=0;
+ for(let i=0;i<n;i++){const x=-R3+2*R3*i/(n-1),y=cbrt(x*x)+AMP*sin(k*x)*sqrt(max(3-x*x,0)),px=ox+x*UNIT,py=oy-y*UNIT;
+  if(i>0){const mx=(px+px0)/2,my=(py+py0)/2,dx=px-px0,dy=-(py-py0),ds=hypot(dx,dy)+1e-9,ix=floor(mx/CW),iy=floor(my/CH);
+   if(ix>=0&&ix<COLS&&iy>=0&&iy<ROWS){const j=iy*COLS+ix;LEN[j]+=ds;VX[j]+=(dx*dx-dy*dy)/ds;VY[j]+=2*dx*dy/ds;LOW[j]+=ds*((my/CH)%1);TURN[j]+=Math.sign(dy)*(mx-(ix+.5)*CW)*ds;
+    if(pOn)HEAT[j]+=ds*.95*exp(-pow(((x+x0)/2-pf)/.14,2))}}
+  px0=px;py0=py;x0=x}
+ const dens=new Float32Array(N),lit=new Float32Array(N);for(let i=0;i<N;i++){dens[i]=LEN[i]/CH;lit[i]=dens[i]>.22?1:0}
+ const bd=box3(dens),bl=box3(lit),fill=new Uint8Array(N),occ=new Uint8Array(N),near=new Float32Array(N);
+ for(let i=0;i<N;i++){near[i]=bd[i]/max(bl[i],1);const[lo,hi]=envelope(cl(GX[i],-R3,R3)),inside=abs(GX[i])<R3&&GY[i]>lo&&GY[i]<hi;
+  fill[i]=(sm((near[i]-.95)/.65)>RND[i]&&(lit[i]||inside))?1:0;occ[i]=fill[i]||lit[i
