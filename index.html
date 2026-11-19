@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Heart in ASCII</title>
-<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}canvas{display:block;width:100%;height:100%;object-fit:contain}</style></head><body><canvas id="c"></canvas>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}canvas{display:block;width:100%;height:100%;object-fit:contain}</style></head><body><canvas id="c"></canvas><div id="m" style="position:fixed;top:12px;left:12px;color:#fff;font:16px monospace">Sto caricando il cuore... se leggi questa scritta per più di 2 secondi, lo script non è partito.</div>
 <script>
 window.onerror=(m,s,l)=>{document.body.insertAdjacentHTML('beforeend','<pre style="position:fixed;top:0;left:0;color:#fff;background:#900;padding:8px;margin:0;font-size:14px;white-space:pre-wrap">ERRORE: '+m+' (riga '+l+')</pre>')};
 // The Heart in ASCII - porting JavaScript. Spazio / tocco = pausa, R = riparti
@@ -45,14 +45,3 @@ function scene(t){
  for(const{g,kind}of STAR){const x=mod(g[0]*COLS+.6*sin(t*.5+g[4]*TAU),COLS),y=.78*ROWS*mod(g[1]-t*.006*(.5+g[3]),1),bt=2.5+4.5*g[3],pk=cl(1-abs(mod(t/bt+g[2],1)-.5)*bt/.24),s=.15+.2*g[4]+pow(pk,1.5);
   put(y,x,s>.8?'*':s>.5?'+':'.',STAR_C[kind],cl(.2+.8*s));if(s>.95&&flares<3){flares++;cellRays(floor(y),floor(x),floor(1+3*pow(min(s,1.2),2)/1.2),STAR_C[kind],.5*min(s,1.2))}}
  for(let i=0;i<N;i++)if(AX[i]){CH_[i]=AX[i];COL[i*3]=COL[i*3+1]=COL[i*3+2]=AL[i]}
- const k=kAt(t),lock=t-T_LOCK,LEN=new Float32Array(N),VX=new Float32Array(N),VY=new Float32Array(N),LOW=new Float32Array(N),TURN=new Float32Array(N),HEAT=new Float32Array(N);
- const n=floor(3000+460*k),pf=pulseFront(t),pOn=lock>=0&&lock<PULSE+.4;let px0=0,py0=0,x0=0;
- for(let i=0;i<n;i++){const x=-R3+2*R3*i/(n-1),y=cbrt(x*x)+AMP*sin(k*x)*sqrt(max(3-x*x,0)),px=ox+x*UNIT,py=oy-y*UNIT;
-  if(i>0){const mx=(px+px0)/2,my=(py+py0)/2,dx=px-px0,dy=-(py-py0),ds=hypot(dx,dy)+1e-9,ix=floor(mx/CW),iy=floor(my/CH);
-   if(ix>=0&&ix<COLS&&iy>=0&&iy<ROWS){const j=iy*COLS+ix;LEN[j]+=ds;VX[j]+=(dx*dx-dy*dy)/ds;VY[j]+=2*dx*dy/ds;LOW[j]+=ds*((my/CH)%1);TURN[j]+=Math.sign(dy)*(mx-(ix+.5)*CW)*ds;
-    if(pOn)HEAT[j]+=ds*.95*exp(-pow(((x+x0)/2-pf)/.14,2))}}
-  px0=px;py0=py;x0=x}
- const dens=new Float32Array(N),lit=new Float32Array(N);for(let i=0;i<N;i++){dens[i]=LEN[i]/CH;lit[i]=dens[i]>.22?1:0}
- const bd=box3(dens),bl=box3(lit),fill=new Uint8Array(N),occ=new Uint8Array(N),near=new Float32Array(N);
- for(let i=0;i<N;i++){near[i]=bd[i]/max(bl[i],1);const[lo,hi]=envelope(cl(GX[i],-R3,R3)),inside=abs(GX[i])<R3&&GY[i]>lo&&GY[i]<hi;
-  fill[i]=(sm((near[i]-.95)/.65)>RND[i]&&(lit[i]||inside))?1:0;occ[i]=fill[i]||lit[i
